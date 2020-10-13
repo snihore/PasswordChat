@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "451827845806",
+    "firebase_url": "https://passwordchat.firebaseio.com",
+    "project_id": "passwordchat",
+    "storage_bucket": "passwordchat.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:451827845806:android:3e8c6b2e24d5c1d06b3b3f",
+        "android_client_info": {
+          "package_name": "com.passwordchat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "451827845806-kminduqhil2bpfl07aojcs9n9gvdtg98.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.passwordchat",
+            "certificate_hash": "1d281db21d896b59403f42d0671d9a137aa79bfc"
+          }
+        },
+        {
+          "client_id": "451827845806-jjeoqtkj4vtjs33ei8r1ovp7tqrbp9ee.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRT_zkP50KGOIAfAcO1LG8MfHfsYv0yq4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "451827845806-jjeoqtkj4vtjs33ei8r1ovp7tqrbp9ee.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
