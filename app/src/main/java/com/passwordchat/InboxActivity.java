@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.ProgressDialog;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -20,11 +21,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +41,7 @@ public class InboxActivity extends AppCompatActivity{
 
     private static final String TAG = "InboxActivity";
     private static final String INBOX_TYPE_KEY = "INBOX_TYPE";
+    private static final String INBOX_TITLE = "INBOX_TITLE";
     private String INBOX_TYPE_VALUE = "";
 
     private EditText messageArea;
@@ -44,6 +51,7 @@ public class InboxActivity extends AppCompatActivity{
 
     private Inbox inbox;
     private InboxMessageRecyclerViewAdapter adapter;
+    private InboxMessageClickListener inboxMessageClickListener;
 
     private ProgressDialog progressDialog;
 
@@ -72,10 +80,49 @@ public class InboxActivity extends AppCompatActivity{
         if(INBOX_TYPE_VALUE.equals("ADD_NEW_INBOX")){
             inbox = new Inbox("No Title");
             titleTextView.setText("No Title");
+
+            //Init RecyclerView Adapter
+            initRecyclerView();
+        }else if(INBOX_TYPE_VALUE.equals("EXISTING_INBOX")){
+            String inboxTitle = getIntent().getStringExtra(INBOX_TITLE);
+            getInboxFromFirestore(inboxTitle);
+
         }
 
-        //Init RecyclerView Adapter
-        InboxMessageClickListener inboxMessageClickListener = new InboxMessageClickListener() {
+        messageArea.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int actionId, KeyEvent event) {
+                if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)) {
+                    addMessageToInbox();
+                }
+                return false;
+            }
+        });
+        //Click Events
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if(INBOX_TYPE_VALUE.equals("ADD_NEW_INBOX")){
+                    showCustomDialog();
+                }else if(INBOX_TYPE_VALUE.equals("EXISTING_INBOX")){
+                    savePermanent(null, inbox.getTitle(), inbox.getUrl());
+
+                }
+            }
+        });
+        sendBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                addMessageToInbox();
+            }
+        });
+
+    }
+
+    private void initRecyclerView() {
+
+        inboxMessageClickListener = new InboxMessageClickListener() {
             @Override
             public void onClick(View view, int position) {
 
@@ -110,34 +157,62 @@ public class InboxActivity extends AppCompatActivity{
                 new InboxMessageRecyclerViewAdapter(getApplicationContext(), inbox.getMessages(), inboxMessageClickListener);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
 
+    private void getInboxFromFirestore(final String inboxTitle) {
 
-        messageArea.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        CollectionReference collectionReference = FirestoreInstance.getInboxMessageCollectionRef();
+
+        if(collectionReference == null){
+            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        collectionReference.document(inboxTitle).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
-            public boolean onEditorAction(TextView textView, int actionId, KeyEvent event) {
-                if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)) {
-                    addMessageToInbox();
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+
+                try{
+
+                    if(task.isSuccessful() && task.getResult().exists()){
+
+                        DocumentSnapshot documentSnapshot = task.getResult();
+
+                        inbox = new Inbox((String) documentSnapshot.getData().get("title"));
+                        inbox.setUrl((String) documentSnapshot.getData().get("url"));
+                        inbox.setImage((Bitmap) documentSnapshot.getData().get("image"));
+
+                        List<Map> list = (List<Map>) documentSnapshot.getData().get("messages");
+                        List<Message> messages = new ArrayList<>();
+
+                        for(Map map: list){
+
+                            Message message = new Message((String) map.get("msg"), (long)map.get("timestamp"));
+                            message.setEncrypted((boolean)map.get("encrypted"));
+
+                            messages.add(message);
+                        }
+
+                        inbox.setMessages(messages);
+
+                        titleTextView.setText(inbox.getTitle());
+
+                        //Init RecyclerView Adapter
+                        initRecyclerView();
+
+                    }
+
+                    if(!task.isSuccessful()){
+                        Toast.makeText(InboxActivity.this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Toast.makeText(InboxActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    onBackPressed();
                 }
-                return false;
             }
         });
-        //Click Events
-        saveBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                if(INBOX_TYPE_VALUE.equals("ADD_NEW_INBOX")){
-                    showCustomDialog();
-                }
-            }
-        });
-        sendBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                addMessageToInbox();
-            }
-        });
-
     }
 
     private void addMessageToInbox() {
@@ -244,21 +319,20 @@ public class InboxActivity extends AppCompatActivity{
         inbox.setTitle(title);
         inbox.setUrl(url);
 
-        DocumentReference inboxMessageDocRef = FirestoreInstance.getInboxMessageCollectionRef().document(title);
+        CollectionReference collectionReference = FirestoreInstance.getInboxMessageCollectionRef();
 
-        if(inboxMessageDocRef == null){
+        if(collectionReference == null){
             Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Map<String, Inbox> inboxMap = new HashMap<>();
+        DocumentReference inboxMessageDocRef = collectionReference.document(title);
 
-        inboxMap.put(title, inbox);
+        if(alertDialog != null ) alertDialog.dismiss();
 
-        alertDialog.dismiss();
         progress(true);
 
-        inboxMessageDocRef.set(inboxMap).addOnSuccessListener(new OnSuccessListener<Void>() {
+        inboxMessageDocRef.set(inbox).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
                 progress(false);
@@ -275,6 +349,7 @@ public class InboxActivity extends AppCompatActivity{
         });
 
     }
+
 
     private void progress(boolean flag){
 
