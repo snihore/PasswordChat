@@ -2,6 +2,7 @@ package com.passwordchat;
 
 import android.graphics.Bitmap;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Inbox {
@@ -10,40 +11,48 @@ public class Inbox {
     private String url;
     private Bitmap image;
 
-    private List<String> messages;
+    private List<Message> messages;
 
     public Inbox() {
     }
 
-    public String getTitle() {
-        return title;
+    public Inbox(String title) {
+        this.title = title;
+        this.messages = new ArrayList<>();
     }
 
     public void setTitle(String title) {
         this.title = title;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    public Bitmap getImage() {
-        return image;
     }
 
     public void setImage(Bitmap image) {
         this.image = image;
     }
 
-    public List<String> getMessages() {
+    public String getTitle() {
+        return title;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Bitmap getImage() {
+        return image;
+    }
+
+    public List<Message> getMessages() {
         return messages;
     }
 
-    public void setMessages(List<String> messages) {
-        this.messages = messages;
+    public void addMessage(Message message){
+        if(message == null){
+            return;
+        }
+        this.messages.add(message);
     }
 }

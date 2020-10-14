@@ -12,6 +12,9 @@ public class ChatActivity extends AppCompatActivity {
 
     private FloatingActionButton addNewChat;
 
+    private static final String INBOX_TYPE_KEY = "INBOX_TYPE";
+    private static final String INBOX_TYPE_VALUE = "ADD_NEW_INBOX";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,6 +30,7 @@ public class ChatActivity extends AppCompatActivity {
 
                 //Inbox Activity
                 Intent intent = new Intent(getApplicationContext(), InboxActivity.class);
+                intent.putExtra(INBOX_TYPE_KEY, INBOX_TYPE_VALUE);
                 startActivity(intent);
             }
         });
