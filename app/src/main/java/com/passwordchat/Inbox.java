@@ -13,6 +13,8 @@ public class Inbox {
 
     private List<Message> messages;
 
+    private long inboxTimestamp;
+
     public Inbox() {
     }
 
@@ -58,5 +60,13 @@ public class Inbox {
             return;
         }
         this.messages.add(message);
+    }
+
+    public long getInboxTimestamp() {
+        return inboxTimestamp;
+    }
+
+    public void setInboxTimestamp(long inboxTimestamp) {
+        this.inboxTimestamp = inboxTimestamp;
     }
 }

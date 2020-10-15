@@ -5,7 +5,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -16,6 +18,8 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class SignupActivity extends AppCompatActivity {
+
+    private static final String TAG = "SignupActivity";
 
     private ProgressDialog progressDialog;
 
@@ -65,7 +69,7 @@ public class SignupActivity extends AppCompatActivity {
                     public void onSuccess(AuthResult authResult) {
                         progress(false);
                         if(e.equals(authResult.getUser().getEmail())){
-                            Toast.makeText(SignupActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                            goToChatActivity();
                         }else{
                             Toast.makeText(SignupActivity.this, "Failed", Toast.LENGTH_SHORT).show();
                             authResult.getUser().delete();
@@ -104,7 +108,7 @@ public class SignupActivity extends AppCompatActivity {
                     public void onSuccess(AuthResult authResult) {
                         progress(false);
                         if(e.equals(authResult.getUser().getEmail())){
-                            Toast.makeText(SignupActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                            goToChatActivity();
                         }else{
                             Toast.makeText(SignupActivity.this, "Failed", Toast.LENGTH_SHORT).show();
                         }
@@ -120,8 +124,12 @@ public class SignupActivity extends AppCompatActivity {
             }
         });
 
+    }
 
-
+    private void goToChatActivity() {
+        Intent intent = new Intent(getApplicationContext(), ChatActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private void progress(boolean flag){

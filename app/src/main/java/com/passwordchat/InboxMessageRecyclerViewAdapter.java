@@ -58,7 +58,7 @@ public class InboxMessageRecyclerViewAdapter extends RecyclerView.Adapter<InboxM
         return messages.size();
     }
 
-    public class InboxMessageViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    public class InboxMessageViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
 
         public TextView msgTextView;
         private InboxMessageClickListener messageClickListener;
@@ -73,6 +73,7 @@ public class InboxMessageRecyclerViewAdapter extends RecyclerView.Adapter<InboxM
             messageClickListener = listener;
 
             itemView.setOnClickListener(this);
+            itemView.setOnLongClickListener(this);
 
         }
 
@@ -80,6 +81,12 @@ public class InboxMessageRecyclerViewAdapter extends RecyclerView.Adapter<InboxM
         @Override
         public void onClick(View view) {
             messageClickListener.onClick(view, getAdapterPosition());
+        }
+
+        @Override
+        public boolean onLongClick(View view) {
+            messageClickListener.onLongClick(view, getAdapterPosition());
+            return true;
         }
     }
 }

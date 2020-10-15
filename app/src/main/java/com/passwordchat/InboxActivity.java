@@ -7,7 +7,11 @@ import androidx.appcompat.widget.AppCompatButton;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -103,8 +108,17 @@ public class InboxActivity extends AppCompatActivity{
             @Override
             public void onClick(View view) {
 
+                try{
+                    // Hide/Close keyboard
+                    InputMethodManager imm = (InputMethodManager)getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
                 if(INBOX_TYPE_VALUE.equals("ADD_NEW_INBOX")){
-                    showCustomDialog();
+                    showCustomDialog(null, null);
                 }else if(INBOX_TYPE_VALUE.equals("EXISTING_INBOX")){
                     savePermanent(null, inbox.getTitle(), inbox.getUrl());
 
@@ -152,11 +166,80 @@ public class InboxActivity extends AppCompatActivity{
                 }
 
             }
+
+            @Override
+            public void onLongClick(View view, int position) {
+
+                Message message = inbox.getMessages().get(position);
+
+                openMessageDialog(message);
+            }
         };
         adapter =
                 new InboxMessageRecyclerViewAdapter(getApplicationContext(), inbox.getMessages(), inboxMessageClickListener);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    private void openMessageDialog(final Message message) {
+
+        if(message == null){
+            return;
+        }
+
+        //before inflating the custom alert dialog layout, we will get the current activity viewgroup
+        ViewGroup viewGroup = findViewById(android.R.id.content);
+
+        //then we will inflate the custom alert dialog xml that we created
+        final View dialogView = LayoutInflater.from(InboxActivity.this).inflate(R.layout.inbox_message_dialog, viewGroup, false);
+
+        //Title and URL
+        TextView copy = (TextView)dialogView.findViewById(R.id.inbox_message_dialog_copy);
+        TextView delete = (TextView)dialogView.findViewById(R.id.inbox_message_dialog_delete);
+
+        //Now we need an AlertDialog.Builder object
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        //setting the view of the builder to our custom view that we already inflated
+        builder.setView(dialogView);
+
+        //finally creating the alert dialog and displaying it
+        final AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+
+        copy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                try{
+                    //Copy Message
+                    // Gets a handle to the clipboard service.
+                    ClipboardManager clipboard = (ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
+
+                    // Creates a new text clip to put on the clipboard
+                    ClipData clip = ClipData.newPlainText("message_msg", message.getMsg());
+
+                    // Set the clipboard's primary clip.
+                    clipboard.setPrimaryClip(clip);
+
+                    Toast.makeText(InboxActivity.this, message.getMsg(), Toast.LENGTH_SHORT).show();
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Toast.makeText(InboxActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+
+                alertDialog.dismiss();
+            }
+        });
+
+        delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                deleteMessage(message.getMsg());
+                adapter.notifyDataSetChanged();
+                alertDialog.dismiss();
+            }
+        });
     }
 
     private void getInboxFromFirestore(final String inboxTitle) {
@@ -181,6 +264,7 @@ public class InboxActivity extends AppCompatActivity{
                         inbox = new Inbox((String) documentSnapshot.getData().get("title"));
                         inbox.setUrl((String) documentSnapshot.getData().get("url"));
                         inbox.setImage((Bitmap) documentSnapshot.getData().get("image"));
+                        inbox.setInboxTimestamp((long) documentSnapshot.getData().get("inboxTimestamp"));
 
                         List<Map> list = (List<Map>) documentSnapshot.getData().get("messages");
                         List<Message> messages = new ArrayList<>();
@@ -225,10 +309,14 @@ public class InboxActivity extends AppCompatActivity{
         }
 
         Date date = new Date();
+        long timestamp = date.getTime();
 
-        Message message = new Message(msg, date.getTime());
+        Message message = new Message(msg, timestamp);
 
         inbox.addMessage(message);
+
+        //Inbox Timestamp
+        inbox.setInboxTimestamp(timestamp);
 
         sortMessages();
 
@@ -266,7 +354,8 @@ public class InboxActivity extends AppCompatActivity{
         }
     }
 
-    private void showCustomDialog() {
+    private void showCustomDialog(String t, String u) {
+
         //before inflating the custom alert dialog layout, we will get the current activity viewgroup
         ViewGroup viewGroup = findViewById(android.R.id.content);
 
@@ -276,6 +365,11 @@ public class InboxActivity extends AppCompatActivity{
         //Title and URL
         final EditText title = (EditText)dialogView.findViewById(R.id.save_title);
         final EditText url = (EditText)dialogView.findViewById(R.id.save_url);
+
+        if(t != null && u != null){
+            title.setText(t);
+            url.setText(u);
+        }
 
         AppCompatButton saveFinal = (AppCompatButton)dialogView.findViewById(R.id.save_final);
 
@@ -347,6 +441,30 @@ public class InboxActivity extends AppCompatActivity{
                 progress(false);
             }
         });
+
+    }
+
+    private void deleteMessage(String msg){
+
+        if(msg == null){
+            return;
+        }
+
+        List<Message> messages = inbox.getMessages();
+
+        int index = -1;
+
+        for(int i=0; i<messages.size(); i++){
+
+            if(messages.get(i).getMsg().equals(msg)){
+                index = i;
+                break;
+            }
+        }
+
+        if(index != -1 && index < messages.size()){
+            inbox.getMessages().remove(index);
+        }
 
     }
 

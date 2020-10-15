@@ -4,23 +4,28 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class ChatInboxAdapter extends RecyclerView.Adapter<ChatInboxAdapter.ChatInboxViewHolder> {
+public class ChatInboxAdapter extends RecyclerView.Adapter<ChatInboxAdapter.ChatInboxViewHolder> implements Filterable {
 
     private Context context;
     private List<String> inboxes;
+    private List<String> inboxesFull;
     private ChatInboxClickListener chatInboxClickListener;
 
     public ChatInboxAdapter(Context context, List<String> inboxes, ChatInboxClickListener chatInboxClickListener) {
         this.context = context;
         this.inboxes = inboxes;
+        this.inboxesFull = new ArrayList<>(inboxes);
         this.chatInboxClickListener = chatInboxClickListener;
     }
 
@@ -66,4 +71,43 @@ public class ChatInboxAdapter extends RecyclerView.Adapter<ChatInboxAdapter.Chat
             chatInboxClickListener.onClick(view, getAdapterPosition());
         }
     }
+
+    //Filter
+    @Override
+    public Filter getFilter() {
+        return inboxFilter;
+    }
+
+    Filter inboxFilter = new Filter() {
+        @Override
+        protected FilterResults performFiltering(CharSequence charSequence) {
+            List<String> filterInboxes = new ArrayList<>();
+
+            if(charSequence == null && charSequence.length() == 0){
+                filterInboxes.addAll(inboxesFull);
+            }else{
+                String filterPattern = charSequence.toString().toLowerCase().trim();
+
+                for(String item: inboxesFull){
+
+                    if(item.toLowerCase().trim().contains(filterPattern)){
+                        filterInboxes.add(item);
+                    }
+                }
+            }
+
+            FilterResults results = new FilterResults();
+            results.values = filterInboxes;
+
+            return results;
+        }
+
+        @Override
+        protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
+
+            inboxes.clear();
+            inboxes.addAll((List<String>)filterResults.values);
+            notifyDataSetChanged();
+        }
+    };
 }

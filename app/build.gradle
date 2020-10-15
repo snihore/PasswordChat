@@ -37,4 +37,7 @@ dependencies {
 
     implementation 'com.android.support:multidex:1.0.3'
 
+    //For Biometric Authentication
+    implementation 'androidx.biometric:biometric:1.0.1'
+
 }
