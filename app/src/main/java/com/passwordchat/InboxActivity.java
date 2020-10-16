@@ -31,6 +31,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -51,8 +52,10 @@ public class InboxActivity extends AppCompatActivity{
 
     private EditText messageArea;
     private TextView titleTextView;
-    private ImageView saveBtn, sendBtn;
+    private ImageView saveBtn, sendBtn, decryptBtn, encryptBtn;
     private RecyclerView recyclerView;
+
+    private List<Integer> encryptedMessagesIndex = new ArrayList<>();
 
     private Inbox inbox;
     private InboxMessageRecyclerViewAdapter adapter;
@@ -72,6 +75,8 @@ public class InboxActivity extends AppCompatActivity{
         titleTextView = (TextView)findViewById(R.id.inbox_title);
         saveBtn = (ImageView)findViewById(R.id.inbox_save_btn);
         sendBtn = (ImageView)findViewById(R.id.inbox_send_btn);
+        decryptBtn = (ImageView)findViewById(R.id.inbox_dec_btn);
+        encryptBtn = (ImageView)findViewById(R.id.inbox_enc_btn);
         recyclerView = (RecyclerView)findViewById(R.id.inbox_recycler_view);
 
         //Progress
@@ -129,6 +134,20 @@ public class InboxActivity extends AppCompatActivity{
             @Override
             public void onClick(View view) {
                 addMessageToInbox();
+            }
+        });
+
+        decryptBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                decryptEncryptedMessages();
+            }
+        });
+
+        encryptBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                encryptMessages();
             }
         });
 
@@ -281,6 +300,9 @@ public class InboxActivity extends AppCompatActivity{
 
                         titleTextView.setText(inbox.getTitle());
 
+                        //DECRYPT ALL INBOX's MESSAGES
+                        decryptAll();
+
                         //Init RecyclerView Adapter
                         initRecyclerView();
 
@@ -298,6 +320,7 @@ public class InboxActivity extends AppCompatActivity{
             }
         });
     }
+
 
     private void addMessageToInbox() {
 
@@ -426,6 +449,9 @@ public class InboxActivity extends AppCompatActivity{
 
         progress(true);
 
+        //ENCRYPT ALL INBOX's MESSAGES
+        encryptAll();
+
         inboxMessageDocRef.set(inbox).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
@@ -441,6 +467,183 @@ public class InboxActivity extends AppCompatActivity{
                 progress(false);
             }
         });
+
+    }
+
+    private void encryptAll() {
+
+        try{
+
+            if(inbox == null) return;
+
+            if(inbox.getMessages() == null) return;
+
+            if(inbox.getMessages().size() == 0) return;
+
+            FirebaseUser user =  FirebaseAuth.getInstance().getCurrentUser();
+
+            if(user == null) return;
+
+            String key = user.getUid();
+
+            if(key == null || key.length() < 16) return;
+
+            key = key.substring(0, 16);
+
+            for(int i=0; i<inbox.getMessages().size(); i++){
+
+                Message message = inbox.getMessages().get(i);
+
+                String enc = Security.encrypt(message.getMsg(), key);
+
+                if(enc == null) continue;
+
+                inbox.getMessages().get(i).setMsg(enc);
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private void encryptMessages(){
+
+        try{
+
+            if(inbox == null) return;
+
+            if(inbox.getMessages() == null) return;
+
+            if(inbox.getMessages().size() == 0) return;
+
+            FirebaseUser user =  FirebaseAuth.getInstance().getCurrentUser();
+
+            if(user == null) return;
+
+            String key = user.getUid();
+
+            if(key == null || key.length() < 16) return;
+
+            key = key.substring(0, 16);
+
+            List<Message> messages = new ArrayList<>(inbox.getMessages());
+
+            if(encryptedMessagesIndex == null || encryptedMessagesIndex.size() == 0) return;
+
+            for(int i=0; i<encryptedMessagesIndex.size(); i++){
+
+                if(encryptedMessagesIndex.get(i) < messages.size()){
+                    Message message = messages.get(encryptedMessagesIndex.get(i));
+
+                    String enc = Security.encrypt(message.getMsg(), key);
+
+                    if(enc == null) continue;
+
+                    messages.get(encryptedMessagesIndex.get(i)).setMsg(enc);
+                    messages.get(encryptedMessagesIndex.get(i)).setEncrypted(true);
+                }
+            }
+
+            inbox.getMessages().clear();
+            inbox.getMessages().addAll(messages);
+            adapter.notifyDataSetChanged();
+            encryptBtn.setVisibility(View.INVISIBLE);
+            decryptBtn.setVisibility(View.VISIBLE);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+
+    }
+
+    private void decryptAll() {
+
+        try{
+
+            if(inbox == null) return;
+
+            if(inbox.getMessages() == null) return;
+
+            if(inbox.getMessages().size() == 0) return;
+
+            FirebaseUser user =  FirebaseAuth.getInstance().getCurrentUser();
+
+            if(user == null) return;
+
+            String key = user.getUid();
+
+            if(key == null || key.length() < 16) return;
+
+            key = key.substring(0, 16);
+
+            for(int i=0; i<inbox.getMessages().size(); i++){
+
+                Message message = inbox.getMessages().get(i);
+
+                String dec = Security.decrypt(message.getMsg(), key);
+
+                if(dec == null) continue;
+
+                inbox.getMessages().get(i).setMsg(dec);
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void decryptEncryptedMessages(){
+
+        try{
+
+            if(inbox == null) return;
+
+            if(inbox.getMessages() == null) return;
+
+            if(inbox.getMessages().size() == 0) return;
+
+            FirebaseUser user =  FirebaseAuth.getInstance().getCurrentUser();
+
+            if(user == null) return;
+
+            String key = user.getUid();
+
+            if(key == null || key.length() < 16) return;
+
+            key = key.substring(0, 16);
+
+            List<Message> messages = new ArrayList<>(inbox.getMessages());
+
+            encryptedMessagesIndex.clear();
+
+            for(int i=0; i<messages.size(); i++){
+
+                Message message = messages.get(i);
+
+                if(message.isEncrypted()){
+
+                    String dec = Security.decrypt(message.getMsg(), key);
+
+                    if(dec == null) continue;
+
+                    messages.get(i).setMsg(dec);
+                    messages.get(i).setEncrypted(false);
+
+                    encryptedMessagesIndex.add(i);
+                }
+            }
+
+            inbox.getMessages().clear();
+            inbox.getMessages().addAll(messages);
+            adapter.notifyDataSetChanged();
+            encryptBtn.setVisibility(View.VISIBLE);
+            decryptBtn.setVisibility(View.INVISIBLE);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
     }
 

@@ -2,6 +2,7 @@ package com.passwordchat;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -9,6 +10,9 @@ import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -20,6 +24,7 @@ public class BiometricAuthentication {
     private String tag;
 
     private static final String MAIN_ACTIVITY_TAG = "MainActivity";
+    private static final String EXTRA_SECURITY_TAG = "ExtraSecurityActivity";
 
     public BiometricAuthentication(Context context, Activity activity, String tag) {
         this.context = context;
@@ -62,6 +67,11 @@ public class BiometricAuthentication {
             public void onAuthenticationError(int errorCode,
                                               @NonNull CharSequence errString) {
                 super.onAuthenticationError(errorCode, errString);
+
+                if(tag.equals(EXTRA_SECURITY_TAG)){
+                    ExtraSecurityActivity extraSecurityActivity = (ExtraSecurityActivity)activity;
+                    extraSecurityActivity.switchOFF();
+                }
                 Toast.makeText(context,
                         "Authentication error: " + errString, Toast.LENGTH_SHORT)
                         .show();
@@ -79,6 +89,20 @@ public class BiometricAuthentication {
                         MainActivity mainActivity = (MainActivity)activity;
 
                         mainActivity.handleBiometricAuth();
+                    }else if(tag.equals(EXTRA_SECURITY_TAG)){
+
+                        ExtraSecurityActivity extraSecurityActivity = (ExtraSecurityActivity)activity;
+
+                        //Store State
+                        SharedPreferenceHandle sharedPreferenceHandle = new SharedPreferenceHandle(extraSecurityActivity);
+
+                        if(sharedPreferenceHandle.setFingerprint(SharePreferenceConf.KEY_ENABLE)){
+                            Toast.makeText(extraSecurityActivity, "Fingerprint Enabled", Toast.LENGTH_SHORT).show();
+                        }else{
+                            Toast.makeText(extraSecurityActivity, "Not Enabled", Toast.LENGTH_SHORT).show();
+                            extraSecurityActivity.switchOFF();
+                        }
+
                     }else{
                         String title = tag;
 
@@ -95,6 +119,11 @@ public class BiometricAuthentication {
             @Override
             public void onAuthenticationFailed() {
                 super.onAuthenticationFailed();
+
+                if(tag.equals(EXTRA_SECURITY_TAG)){
+                    ExtraSecurityActivity extraSecurityActivity = (ExtraSecurityActivity)activity;
+                    extraSecurityActivity.switchOFF();
+                }
                 Toast.makeText(context, "Authentication failed",
                         Toast.LENGTH_SHORT)
                         .show();
@@ -102,8 +131,8 @@ public class BiometricAuthentication {
         });
 
         promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Biometric login for my app")
-                .setSubtitle("Log in using your biometric credential")
+                .setTitle("Biometric verification for PasswordChat")
+                .setSubtitle("Verify using your biometric credential")
                 .setNegativeButtonText("Use account password")
                 .build();
 

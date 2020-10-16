@@ -32,6 +32,7 @@ public class ChatSettingsBottomsheetDialog extends BottomSheetDialogFragment {
                 container, false);
 
         TextView logout = (TextView) view.findViewById(R.id.chat_bottom_sheet_logout);
+        TextView extraSecurity = (TextView) view.findViewById(R.id.chat_bottom_sheet_extra_security);
 
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -41,6 +42,15 @@ public class ChatSettingsBottomsheetDialog extends BottomSheetDialogFragment {
                 Intent intent = new Intent(context, SignupActivity.class);
                 getActivity().startActivity(intent);
                 getActivity().finish();
+            }
+        });
+
+        extraSecurity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dismiss();
+                Intent intent = new Intent(context, ExtraSecurityActivity.class);
+                getActivity().startActivity(intent);
             }
         });
 

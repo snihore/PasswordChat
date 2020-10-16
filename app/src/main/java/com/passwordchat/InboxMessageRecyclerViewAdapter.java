@@ -1,6 +1,7 @@
 package com.passwordchat;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Arrays;
@@ -47,9 +50,13 @@ public class InboxMessageRecyclerViewAdapter extends RecyclerView.Adapter<InboxM
         if(messages.get(position).isEncrypted()){
             //Encrypted
             holder.messageImg.setImageResource(R.drawable.ic_baseline_visibility_24);
+            holder.msgTextView.setTextColor(Color.parseColor("#ffffff"));
+            holder.constraintLayout.setBackgroundResource(R.drawable.round_layout_bg02);
         }else {
             //Decrypted
             holder.messageImg.setImageResource(R.drawable.logo);
+            holder.msgTextView.setTextColor(ContextCompat.getColor(context, R.color.black));
+            holder.constraintLayout.setBackgroundResource(R.drawable.round_layout_bg);
         }
     }
 
@@ -63,12 +70,14 @@ public class InboxMessageRecyclerViewAdapter extends RecyclerView.Adapter<InboxM
         public TextView msgTextView;
         private InboxMessageClickListener messageClickListener;
         public ImageView messageImg;
+        public ConstraintLayout constraintLayout;
 
         public InboxMessageViewHolder(@NonNull View itemView, InboxMessageClickListener listener) {
             super(itemView);
 
             msgTextView = (TextView)itemView.findViewById(R.id.message_msg);
             messageImg = (ImageView)itemView.findViewById(R.id.message_img);
+            constraintLayout = (ConstraintLayout)itemView.findViewById(R.id.inbox_message_layout);
 
             messageClickListener = listener;
 

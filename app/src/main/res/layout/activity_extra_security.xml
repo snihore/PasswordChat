@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ExtraSecurityActivity"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/holo_green_dark"
+        android:elevation="5dp">
+
+        <ImageView
+            android:id="@+id/extra_security_back_btn"
+            android:layout_width="?attr/actionBarSize"
+            android:layout_height="?attr/actionBarSize"
+            android:padding="12dp"
+            android:layout_alignParentLeft="true"
+            android:src="@drawable/ic_baseline_arrow_back_24"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Extra Security"
+            android:textColor="#ffffff"
+            android:textSize="20sp"
+            android:layout_centerInParent="true"/>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/extra_security_fingerprint_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        android:layout_marginTop="40dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Fingerprint Scanner"
+            android:textColor="@android:color/black"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:layout_weight="1"/>
+
+        <Switch
+            android:id="@+id/extra_security_fingerprint_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/extra_security_fingerprint_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fingerprint Scanner is not available in your smartphone"
+        android:textColor="@android:color/darker_gray"
+        android:fontFamily="monospace"
+        android:textStyle="bold"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:layout_marginTop="40dp"/>
+
+</LinearLayout>

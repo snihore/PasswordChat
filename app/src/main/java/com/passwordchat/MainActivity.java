@@ -27,10 +27,29 @@ public class MainActivity extends AppCompatActivity {
 
         //Biometric Authentication
         try{
-            BiometricAuthentication biometricAuthentication = new BiometricAuthentication(this, this, TAG);
 
-            if(biometricAuthentication.canAuthenticate()){
-                biometricAuthentication.authenticate();
+            SharedPreferenceHandle sharedPreferenceHandle = new SharedPreferenceHandle(this);
+
+            if(sharedPreferenceHandle.getFingerprint() != null){
+                switch (sharedPreferenceHandle.getFingerprint()){
+
+                    case SharePreferenceConf.KEY_ENABLE:
+                        BiometricAuthentication biometricAuthentication = new BiometricAuthentication(this, this, TAG);
+                        if(biometricAuthentication.canAuthenticate()){
+                            biometricAuthentication.authenticate();
+                        }else{
+                            handleBiometricAuth();
+                        }
+                        break;
+                    case SharePreferenceConf.KEY_DISABLE:
+                        handleBiometricAuth();
+                        break;
+                    case SharePreferenceConf.NOT_AVAILABLE:
+                        handleBiometricAuth();
+                        break;
+                }
+            }else{
+                handleBiometricAuth();
             }
         }catch (Exception e){
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();

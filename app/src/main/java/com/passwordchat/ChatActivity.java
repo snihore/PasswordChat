@@ -227,11 +227,31 @@ public class ChatActivity extends AppCompatActivity {
                                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
 
                                    //Biometric Authentication
-                                   BiometricAuthentication biometricAuthentication = new BiometricAuthentication(getApplicationContext(), ChatActivity.this, inboxes.get(position));
 
-                                   if(biometricAuthentication.canAuthenticate()){
+                                   SharedPreferenceHandle sharedPreferenceHandle = new SharedPreferenceHandle(ChatActivity.this);
 
-                                       biometricAuthentication.authenticate();
+                                   if(sharedPreferenceHandle.getFingerprint() != null){
+                                       switch (sharedPreferenceHandle.getFingerprint()){
+
+                                           case SharePreferenceConf.KEY_ENABLE:
+                                               BiometricAuthentication biometricAuthentication = new BiometricAuthentication(getApplicationContext(), ChatActivity.this, inboxes.get(position));
+
+                                               if(biometricAuthentication.canAuthenticate()){
+
+                                                   biometricAuthentication.authenticate();
+                                               }else{
+                                                   handleBiometricAuth(inboxes.get(position));
+                                               }
+                                               break;
+                                           case SharePreferenceConf.KEY_DISABLE:
+                                               handleBiometricAuth(inboxes.get(position));
+                                               break;
+                                           case SharePreferenceConf.NOT_AVAILABLE:
+                                               handleBiometricAuth(inboxes.get(position));
+                                               break;
+                                       }
+                                   }else{
+                                       handleBiometricAuth(inboxes.get(position));
                                    }
                                }catch (Exception e){
                                    Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
